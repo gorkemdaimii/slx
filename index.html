@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Şevvale Sevgilerle 💕</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+        @keyframes heartBurst {
+            0% { 
+                transform: translate(-50%, -50%) scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: translate(-50%, -80px) scale(1.2) rotate(180deg);
+                opacity: 0.8;
+            }
+            100% { 
+                transform: translate(-50%, -120px) scale(0.5) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        .animate-float {
+            animation: float linear infinite;
+        }
+        .animate-heartBurst {
+            animation: heartBurst ease-out forwards;
+        }
+        .hover\:scale-102:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Lucide Icons as inline SVG components
+        const Heart = ({ size = 24, className = "", style = {} }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            </svg>
+        );
+
+        const Send = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>
+            </svg>
+        );
+
+        const Trash2 = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
+            </svg>
+        );
+
+        const Sparkles = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
+            </svg>
+        );
+
+        // Simple storage implementation using localStorage
+        window.storage = {
+            async get(key, shared = false) {
+                try {
+                    const value = localStorage.getItem(key);
+                    return value ? { key, value, shared } : null;
+                } catch {
+                    return null;
+                }
+            },
+            async set(key, value, shared = false) {
+                try {
+                    localStorage.setItem(key, value);
+                    return { key, value, shared };
+                } catch {
+                    return null;
+                }
+            },
+            async delete(key, shared = false) {
+                try {
+                    localStorage.removeItem(key);
+                    return { key, deleted: true, shared };
+                } catch {
+                    return null;
+                }
+            },
+            async list(prefix = '', shared = false) {
+                try {
+                    const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix));
+                    return { keys, prefix, shared };
+                } catch {
+                    return null;
+                }
+            }
+        };
+
+        function MessageWall() {
+            const [messages, setMessages] = useState([]);
+            const [newMessage, setNewMessage] = useState('');
+            const [senderName, setSenderName] = useState('');
+            const [loading, setLoading] = useState(true);
+            const [hearts, setHearts] = useState([]);
+
+            useEffect(() => {
+                loadMessages();
+            }, []);
+
+            const loadMessages = async () => {
+                try {
+                    const result = await window.storage.list('msg:', true);
+                    if (result && result.keys) {
+                        const loadedMessages = await Promise.all(
+                            result.keys.map(async (key) => {
+                                try {
+                                    const data = await window.storage.get(key, true);
+                                    return data ? JSON.parse(data.value) : null;
+                                } catch {
+                                    return null;
+                                }
+                            })
+                        );
+                        setMessages(loadedMessages.filter(m => m).sort((a, b) => b.timestamp - a.timestamp));
+                    }
+                } catch (error) {
+                    console.log('İlk mesajı siz yazın! 💕');
+                }
+                setLoading(false);
+            };
+
+            const addMessage = async () => {
+                if (!newMessage.trim() || !senderName.trim()) return;
+
+                const message = {
+                    id: Date.now(),
+                    text: newMessage,
+                    sender: senderName,
+                    timestamp: Date.now(),
+                    color: `hsl(${Math.random() * 360}, 70%, 65%)`
+                };
+
+                try {
+                    await window.storage.set(`msg:${message.id}`, JSON.stringify(message), true);
+                    setMessages([message, ...messages]);
+                    setNewMessage('');
+                } catch (error) {
+                    console.error('Mesaj kaydedilemedi:', error);
+                }
+            };
+
+            const deleteMessage = async (id) => {
+                try {
+                    await window.storage.delete(`msg:${id}`, true);
+                    setMessages(messages.filter(m => m.id !== id));
+                } catch (error) {
+                    console.error('Mesaj silinemedi:', error);
+                }
+            };
+
+            const createHeart = (e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const heart = {
+                    id: Date.now() + Math.random(),
+                    x,
+                    y,
+                    size: Math.random() * 30 + 20,
+                    rotation: Math.random() * 360,
+                    duration: Math.random() * 1000 + 1000
+                };
+                
+                setHearts(prev => [...prev, heart]);
+                setTimeout(() => {
+                    setHearts(prev => prev.filter(h => h.id !== heart.id));
+                }, heart.duration);
+            };
+
+            const formatDate = (timestamp) => {
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diffTime = Math.abs(now - date);
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays === 0) return 'Bugün ' + date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                if (diffDays === 1) return 'Dün ' + date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                return date.toLocaleDateString('tr-TR') + ' ' + date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            };
+
+            if (loading) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-rose-400 via-pink-500 to-purple-600 flex items-center justify-center">
+                        <div className="text-3xl text-white font-bold animate-pulse flex items-center gap-3">
+                            <Heart size={32} className="fill-white" />
+                            Yükleniyor...
+                            <Heart size={32} className="fill-white" />
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div 
+                    className="min-h-screen bg-gradient-to-br from-rose-400 via-pink-500 to-purple-600 relative overflow-hidden cursor-pointer"
+                    onClick={createHeart}
+                >
+                    {/* Animated background hearts */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                        {[...Array(15)].map((_, i) => (
+                            <Heart
+                                key={i}
+                                className="absolute text-white opacity-10 animate-float"
+                                size={Math.random() * 60 + 40}
+                                style={{
+                                    left: `${Math.random() * 100}%`,
+                                    top: `${Math.random() * 100}%`,
+                                    animationDelay: `${Math.random() * 5}s`,
+                                    animationDuration: `${Math.random() * 10 + 10}s`
+                                }}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Click hearts */}
+                    {hearts.map(heart => (
+                        <div
+                            key={heart.id}
+                            className="absolute pointer-events-none animate-heartBurst"
+                            style={{
+                                left: heart.x,
+                                top: heart.y,
+                                animationDuration: `${heart.duration}ms`
+                            }}
+                        >
+                            <Heart
+                                className="text-white fill-white"
+                                size={heart.size}
+                                style={{ transform: `rotate(${heart.rotation}deg)` }}
+                            />
+                        </div>
+                    ))}
+
+                    <div className="relative z-10 max-w-2xl mx-auto px-4 py-6 sm:py-8">
+                        {/* Header */}
+                        <div className="text-center mb-6 sm:mb-8">
+                            <div className="inline-block bg-white/20 backdrop-blur-lg rounded-3xl px-6 sm:px-8 py-4 sm:py-6 shadow-2xl border border-white/30 mb-4">
+                                <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold text-white mb-2 flex items-center justify-center gap-2 sm:gap-3">
+                                    <Sparkles size={window.innerWidth < 640 ? 28 : 40} className="animate-pulse" />
+                                    Şevvale Sevgilerle
+                                    <Sparkles size={window.innerWidth < 640 ? 28 : 40} className="animate-pulse" />
+                                </h1>
+                                <p className="text-white/90 text-sm sm:text-base md:text-lg font-medium">Seni düşündüğüm her an burada 💕</p>
+                            </div>
+                        </div>
+
+                        {/* Message Input */}
+                        <div className="bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 mb-4 sm:mb-6 border border-white/50">
+                            <div className="mb-3 sm:mb-4">
+                                <input
+                                    type="text"
+                                    placeholder="İsmin 💕"
+                                    value={senderName}
+                                    onChange={(e) => setSenderName(e.target.value)}
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-pink-200 rounded-xl sm:rounded-2xl focus:outline-none focus:border-pink-400 text-base sm:text-lg bg-white/80 backdrop-blur"
+                                />
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <textarea
+                                    placeholder="Mesajını yaz... 💌"
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && window.innerWidth > 640 && (e.preventDefault(), addMessage())}
+                                    className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border-2 border-pink-200 rounded-xl sm:rounded-2xl focus:outline-none focus:border-pink-400 resize-none text-base sm:text-lg bg-white/80 backdrop-blur"
+                                    rows="3"
+                                />
+                                <button
+                                    onClick={addMessage}
+                                    disabled={!newMessage.trim() || !senderName.trim()}
+                                    className="bg-gradient-to-r from-pink-500 to-rose-600 text-white px-6 sm:px-8 py-3 rounded-xl sm:rounded-2xl hover:from-pink-600 hover:to-rose-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl text-base sm:text-lg whitespace-nowrap"
+                                >
+                                    <Send size={20} />
+                                    Gönder
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Messages */}
+                        <div className="space-y-3 sm:space-y-4">
+                            {messages.length === 0 ? (
+                                <div className="text-center py-12 sm:py-16 bg-white/20 backdrop-blur-lg rounded-2xl sm:rounded-3xl border border-white/30">
+                                    <Heart size={window.innerWidth < 640 ? 48 : 64} className="mx-auto mb-4 text-white fill-white animate-pulse" />
+                                    <p className="text-white text-lg sm:text-xl font-medium px-4">İlk mesajı sen yaz! 💕</p>
+                                </div>
+                            ) : (
+                                messages.map((msg) => (
+                                    <div
+                                        key={msg.id}
+                                        className="bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 transform transition-all hover:scale-102 hover:shadow-2xl border border-white/50"
+                                    >
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="font-bold text-base sm:text-lg truncate" style={{ color: msg.color }}>
+                                                        {msg.sender}
+                                                    </span>
+                                                    <Heart size={16} style={{ color: msg.color, fill: msg.color }} className="flex-shrink-0" />
+                                                </div>
+                                                <span className="text-gray-500 text-xs sm:text-sm">
+                                                    {formatDate(msg.timestamp)}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    deleteMessage(msg.id);
+                                                }}
+                                                className="text-red-400 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg flex-shrink-0"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                        <p className="text-gray-800 text-base sm:text-lg whitespace-pre-wrap leading-relaxed break-words">
+                                            {msg.text}
+                                        </p>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="text-center mt-8 sm:mt-12 pb-6 sm:pb-8">
+                            <div className="bg-white/20 backdrop-blur-lg rounded-2xl sm:rounded-3xl px-4 sm:px-6 py-3 sm:py-4 inline-block border border-white/30">
+                                <p className="text-white font-medium text-sm sm:text-base">
+                                    Mesafeler bizi ayıramaz 💕✨
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MessageWall />);
+    </script>
+</body>
+</html>
