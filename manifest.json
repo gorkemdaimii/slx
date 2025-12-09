@@ -1,0 +1,9 @@
+{
+  "name": "Şevvale Sevgilerle",
+  "short_name": "Mektuplar",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9d5e5",
+  "theme_color": "#f48fb1",
+  "icons": []
+}
