@@ -18,7 +18,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
 
-    <!-- Manifest -->
+    <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
 
     <style>
@@ -57,7 +57,7 @@ const firebaseConfig = {
     projectId: "sevvals-239d0",
     storageBucket: "sevvals-239d0.firebasestorage.app",
     messagingSenderId: "727817694816",
-    appId: "1:727817694816:web:7282a82008d29ee0665d05",
+    appId: "1:727817694816:web:7282a82008d29ee0665d05"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -67,27 +67,28 @@ const messaging = firebase.messaging();
 </script>
 
 <script type="text/babel">
-
 const { useState, useEffect } = React;
 
 /*  
 ----------------------------
-  TAM EKRAN MEKTUP ANİMASYONU
+  TAM EKRAN 'GÖNDERİLİYOR' MEKTUP
 ----------------------------
 */
 function FullscreenSendLetter({ text, onFinish }) {
     useEffect(() => {
-        setTimeout(() => onFinish(), 2300);
+        const t = setTimeout(() => onFinish(), 2300);
+        return () => clearTimeout(t);
     }, []);
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-rose-400/70 backdrop-blur-xl z-[9999]">
             <div className="relative flex flex-col items-center">
-
+                {/* Zarf */}
                 <div
                     className="w-80 h-52 bg-white border border-rose-300 shadow-2xl rounded-md relative"
                     style={{ animation: "envelopeFlyAway 2s ease-out forwards", animationDelay: "1.1s" }}
                 >
+                    {/* Kapak */}
                     <div
                         className="absolute top-0 w-full h-28 bg-rose-200 border-b border-rose-300"
                         style={{
@@ -97,11 +98,14 @@ function FullscreenSendLetter({ text, onFinish }) {
                     ></div>
                 </div>
 
+                {/* Mektup */}
                 <div
                     className="absolute w-64 bg-white border border-rose-200 shadow-xl rounded-md p-4 text-center"
                     style={{ animation: "letterSlideUp 1.5s ease-out forwards", animationDelay: "0.4s" }}
                 >
-                    <p className="text-rose-500 font-bold text-lg mb-2">💌 Gönderiliyor...</p>
+                    <p className="text-rose-500 font-bold text-lg mb-2">
+                        💌 Gönderiliyor...
+                    </p>
                     <p className="text-gray-700 whitespace-pre-wrap">{text}</p>
                 </div>
             </div>
@@ -111,7 +115,7 @@ function FullscreenSendLetter({ text, onFinish }) {
 
 /*  
 ----------------------------
-        GİZLİ MESAJ MODU (8)
+   GİZLİ MESAJ (8) – hold to reveal
 ----------------------------
 */
 function SecretText({ text }) {
@@ -121,9 +125,10 @@ function SecretText({ text }) {
         <p
             onMouseDown={() => setRevealed(true)}
             onMouseUp={() => setRevealed(false)}
+            onMouseLeave={() => setRevealed(false)}
             onTouchStart={() => setRevealed(true)}
             onTouchEnd={() => setRevealed(false)}
-            className="transition-all duration-300 select-none"
+            className="transition-all duration-300 select-none cursor-pointer"
             style={{
                 filter: revealed ? "blur(0px)" : "blur(6px)",
                 opacity: revealed ? 1 : 0.7
@@ -141,13 +146,14 @@ function SecretText({ text }) {
 */
 function WelcomeOverlay({ onClose }) {
     useEffect(() => {
-        setTimeout(() => onClose(), 2200);
+        const t = setTimeout(onClose, 2200);
+        return () => clearTimeout(t);
     }, []);
 
     return (
         <div className="fixed inset-0 bg-rose-300/60 backdrop-blur-xl z-[9998] flex items-center justify-center">
             <h1
-                className="text-white text-5xl font-bold"
+                className="text-white text-4xl sm:text-5xl font-bold text-center px-4"
                 style={{ animation: "welcomeFade 1.5s ease-out forwards" }}
             >
                 💕 Hoş geldin prensesim 💕
@@ -158,34 +164,10 @@ function WelcomeOverlay({ onClose }) {
 
 /*  
 ----------------------------
-  ZAMAN KAPSÜLÜ (14)
-----------------------------
-*/
-function TimeCapsuleMessage({ msg }) {
-    const now = new Date();
-    const openAt = msg.openAt?.toDate();
-
-    if (now < openAt) {
-        return (
-            <div className="bg-white p-5 rounded-2xl shadow-xl opacity-60">
-                <p className="font-bold text-rose-500 text-lg">⏳ Zaman Kapsülü</p>
-                <p className="text-gray-600">
-                    Bu mektup <b>{openAt.toLocaleString("tr-TR")}</b> tarihinde açılacak 💌
-                </p>
-            </div>
-        );
-    }
-
-    return null;
-}
-
-/*  
-----------------------------
-        ANA MESAJ SİSTEMİ
+  ANA MESAJ SİSTEMİ + ZAMAN KAPSÜLÜ
 ----------------------------
 */
 function MessageWall() {
-
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const [senderName, setSenderName] = useState("");
@@ -196,16 +178,19 @@ function MessageWall() {
     const [tempText, setTempText] = useState("");
 
     const [showWelcome, setShowWelcome] = useState(false);
+    const [pushReady, setPushReady] = useState(false);
 
-    /* Hoş Geldin Animasyonu */
+    const now = new Date();
+
+    /* Hoş geldin overlay'i – sadece ilk girişte */
     useEffect(() => {
-        if (!localStorage.getItem("welcomeShown")) {
+        if (window && !localStorage.getItem("sevval_welcome_shown")) {
             setShowWelcome(true);
-            localStorage.setItem("welcomeShown", "yes");
+            localStorage.setItem("sevval_welcome_shown", "yes");
         }
     }, []);
 
-    /* Firestore Mesaj Listener */
+    /* Firestore mesaj listener */
     useEffect(() => {
         const unsub = db.collection("messages")
             .orderBy("timestamp", "desc")
@@ -219,30 +204,49 @@ function MessageWall() {
         return () => unsub();
     }, []);
 
-    /* PUSH BİLDİRİM ABONELİĞİ */
-    async function subscribeToNotifications() {
-        const permission = await Notification.requestPermission();
-
-        if (permission !== "granted") {
-            alert("Bildirim izni verilmedi.");
-            return;
+    /* Push için service worker kayıtlı mı? */
+    useEffect(() => {
+        if ("serviceWorker" in navigator && "Notification" in window) {
+            navigator.serviceWorker.register("/firebase-messaging-sw.js")
+                .then(() => setPushReady(true))
+                .catch(() => setPushReady(false));
         }
+    }, []);
 
-        const registration = await navigator.serviceWorker.register("/sw.js");
+    /* PUSH TOKEN KAYDETME */
+    async function subscribeToNotifications() {
+        try {
+            if (!("Notification" in window)) {
+                alert("Tarayıcın bildirim desteklemiyor.");
+                return;
+            }
 
-        const vapidKey = "YOUR_PUBLIC_VAPID_KEY";  // 🔥 BURAYA EKLEYECEKSİN
+            const permission = await Notification.requestPermission();
+            if (permission !== "granted") {
+                alert("Bildirim izni verilmedi.");
+                return;
+            }
 
-        const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: vapidKey
-        });
+            // Firebase Console > Cloud Messaging > Web configuration'dan alacağın public key
+            const vapidKey = "BURAYA_WEB_PUSH_CERT_PUBLIC_KEY_GELECEK";
 
-        await db.collection("subscriptions").add(JSON.parse(JSON.stringify(subscription)));
+            const currentToken = await messaging.getToken({ vapidKey });
 
-        alert("Bildirimler aktif!");
+            if (currentToken) {
+                await db.collection("notificationTokens").doc(currentToken).set({
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("Bildirimler aktif 💌");
+            } else {
+                alert("Token alınamadı.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Bildirim abonesi oluşturulamadı.");
+        }
     }
 
-    /* Mesaj Gönderme */
+    /* Mesaj gönderme */
     const sendMessage = async () => {
         if (!senderName.trim() || !newMessage.trim()) return;
 
@@ -255,24 +259,27 @@ function MessageWall() {
             secret: secretMode,
             openAt: capsuleDate ? new Date(capsuleDate) : null,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            color: `hsl(${Math.random() * 360}, 70%, 65%)`,
+            color: `hsl(${Math.random() * 360}, 70%, 65%)`
         });
-
-        /* Bildirim gönder */
-        fetch("/send-notification", { method: "POST" });
 
         setNewMessage("");
         setSecretMode(false);
         setCapsuleDate("");
     };
 
+    const deleteMessage = async (id) => {
+        await db.collection("messages").doc(id).delete();
+    };
+
     return (
         <div className="min-h-screen p-6 bg-gradient-to-br from-rose-400 via-pink-500 to-purple-600">
 
             {/* Hoş geldin */}
-            {showWelcome && <WelcomeOverlay onClose={() => setShowWelcome(false)} />}
+            {showWelcome && (
+                <WelcomeOverlay onClose={() => setShowWelcome(false)} />
+            )}
 
-            {/* Tam ekran animasyon */}
+            {/* Tam ekran mektup animasyonu */}
             {sendingAnim && (
                 <FullscreenSendLetter
                     text={tempText}
@@ -281,21 +288,27 @@ function MessageWall() {
             )}
 
             {/* Header */}
-            <div className="max-w-2xl mx-auto bg-white/30 backdrop-blur-xl p-6 
-            rounded-3xl text-center mb-6">
-                <h1 className="text-white text-5xl font-bold">Şevvale Sevgilerle 💕</h1>
+            <div className="max-w-2xl mx-auto bg-white/30 backdrop-blur-xl p-6 rounded-3xl text-center mb-4">
+                <h1 className="text-white text-4xl sm:text-5xl font-bold">
+                    Şevvale Sevgilerle 💕
+                </h1>
+                <p className="text-white/90 mt-1">Sadece senin için yazılmış mektuplar.</p>
             </div>
 
-            {/* Bildirim aktif et */}
-            <button 
-                onclick={subscribeToNotifications}
-                className="block mx-auto mb-4 bg-white/30 backdrop-blur-lg px-4 py-2 rounded-xl text-white font-bold hover:bg-white/40">
-                🔔 Bildirimleri Aç
-            </button>
+            {/* Bildirim butonu */}
+            {pushReady && (
+                <div className="max-w-2xl mx-auto mb-4 text-center">
+                    <button
+                        onClick={subscribeToNotifications}
+                        className="bg-white/30 backdrop-blur-lg px-4 py-2 rounded-xl text-white font-semibold hover:bg-white/40"
+                    >
+                        🔔 Bildirimleri Aç
+                    </button>
+                </div>
+            )}
 
-            {/* Input */}
+            {/* Input alanı */}
             <div className="max-w-2xl mx-auto bg-white p-5 rounded-2xl shadow-xl mb-6">
-                
                 <input
                     type="text"
                     placeholder="İsmin 💕"
@@ -341,43 +354,50 @@ function MessageWall() {
                 </button>
             </div>
 
-            {/* MESAJLAR */}
-            <div className="max-w-2xl mx-auto space-y-4">
-                {messages.map(msg => (
-                    <div key={msg.id} className="bg-white p-5 rounded-2xl shadow-xl">
+            {/* Mesaj listesi */}
+            <div className="max-w-2xl mx-auto space-y-4 pb-10">
+                {messages.map(msg => {
+                    const openAt = msg.openAt?.toDate ? msg.openAt.toDate() : null;
+                    const locked = openAt && now < openAt;
 
-                        {/* zaman kapsülü */}
-                        <TimeCapsuleMessage msg={msg} />
+                    return (
+                        <div key={msg.id} className="bg-white p-5 rounded-2xl shadow-xl">
 
-                        <div className="flex justify-between items-start mb-2">
-                            <div>
-                                <p className="font-bold" style={{ color: msg.color }}>
-                                    {msg.sender}
-                                </p>
-                                <p className="text-gray-500 text-sm">
-                                    {msg.timestamp?.toDate().toLocaleString("tr-TR")}
-                                </p>
+                            <div className="flex justify-between items-start mb-2">
+                                <div>
+                                    <p className="font-bold" style={{ color: msg.color }}>
+                                        {msg.sender}
+                                    </p>
+                                    <p className="text-gray-500 text-sm">
+                                        {msg.timestamp?.toDate().toLocaleString("tr-TR")}
+                                    </p>
+                                </div>
+
+                                <button
+                                    onClick={() => deleteMessage(msg.id)}
+                                    className="text-red-500 hover:text-red-700 text-xl"
+                                >
+                                    🗑️
+                                </button>
                             </div>
 
-                            {/* silme */}
-                            <button
-                                onClick={() => db.collection("messages").doc(msg.id).delete()}
-                                className="text-red-500 hover:text-red-700 text-xl"
-                            >
-                                🗑️
-                            </button>
+                            {/* ZAMAN KAPSÜLÜ MANTIĞI */}
+                            {locked ? (
+                                <p className="text-gray-600 mt-2">
+                                    ⏳ Bu mektup{" "}
+                                    <b>{openAt.toLocaleString("tr-TR")}</b> tarihinde açılacak 💌
+                                </p>
+                            ) : msg.secret ? (
+                                <SecretText text={msg.text} />
+                            ) : (
+                                <p className="text-gray-800 whitespace-pre-wrap mt-3">
+                                    {msg.text}
+                                </p>
+                            )}
                         </div>
-
-                        {msg.secret ? (
-                            <SecretText text={msg.text} />
-                        ) : (
-                            <p className="text-gray-800 whitespace-pre-wrap mt-3">{msg.text}</p>
-                        )}
-
-                    </div>
-                ))}
+                    );
+                })}
             </div>
-
         </div>
     );
 }
