@@ -16,9 +16,9 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
 
+    <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
 
     <style>
@@ -39,18 +39,9 @@
             100% { transform: scale(0.6) translateY(-200px); opacity: 0; }
         }
 
-        @keyframes modalOpen {
-            0% { opacity: 0; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        @keyframes filmEffect {
-            0% { filter: contrast(0.8) brightness(0.9) blur(2px); }
-            100% { filter: contrast(1) brightness(1) blur(0); }
-        }
-
-        .film-modal {
-            animation: modalOpen 0.3s ease-out, filmEffect 0.4s ease-out;
+        @keyframes welcomeFade {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -59,6 +50,7 @@
     <div id="root"></div>
 
 <script>
+/* ---------------------- FIREBASE CONFIG ---------------------- */
 const firebaseConfig = {
     apiKey: "AIzaSyBzF_kGylIuZKu2DnlOuMc-cU3YJwTGCHA",
     authDomain: "sevvals-239d0.firebaseapp.com",
@@ -71,36 +63,17 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 const db = firebase.firestore();
-const storage = firebase.storage();
 const messaging = firebase.messaging();
-
-// React değişkenlerini açıyoruz
-const { useState, useEffect } = React;
 </script>
-    <script type="text/babel">
 
-/* --------------------------------------------------------
-   FİLM EFEKTİ FOTOĞRAF MODALI
--------------------------------------------------------- */
-function PhotoModal({ url, onClose }) {
-    if (!url) return null;
+<script type="text/babel">
+const { useState, useEffect } = React;
 
-    return (
-        <div 
-            className="fixed inset-0 bg-black/70 backdrop-blur-md z-[9999] flex items-center justify-center p-4"
-            onClick={onClose}
-        >
-            <img 
-                src={url} 
-                className="max-w-full max-h-full rounded-xl shadow-2xl film-modal"
-            />
-        </div>
-    );
-}
-
-/* --------------------------------------------------------
-   TAM EKRAN MEKTUP ANİMASYONU (Gönderiliyor...)
--------------------------------------------------------- */
+/*  
+----------------------------
+  TAM EKRAN 'GÖNDERİLİYOR' MEKTUP
+----------------------------
+*/
 function FullscreenSendLetter({ text, onFinish }) {
     useEffect(() => {
         const t = setTimeout(() => onFinish(), 2300);
@@ -108,13 +81,14 @@ function FullscreenSendLetter({ text, onFinish }) {
     }, []);
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-rose-400/70 backdrop-blur-xl z-[9998]">
+        <div className="fixed inset-0 flex items-center justify-center bg-rose-400/70 backdrop-blur-xl z-[9999]">
             <div className="relative flex flex-col items-center">
-
+                {/* Zarf */}
                 <div
                     className="w-80 h-52 bg-white border border-rose-300 shadow-2xl rounded-md relative"
                     style={{ animation: "envelopeFlyAway 2s ease-out forwards", animationDelay: "1.1s" }}
                 >
+                    {/* Kapak */}
                     <div
                         className="absolute top-0 w-full h-28 bg-rose-200 border-b border-rose-300"
                         style={{
@@ -124,22 +98,26 @@ function FullscreenSendLetter({ text, onFinish }) {
                     ></div>
                 </div>
 
+                {/* Mektup */}
                 <div
                     className="absolute w-64 bg-white border border-rose-200 shadow-xl rounded-md p-4 text-center"
                     style={{ animation: "letterSlideUp 1.5s ease-out forwards", animationDelay: "0.4s" }}
                 >
-                    <p className="text-rose-500 font-bold text-lg mb-2">💌 Gönderiliyor...</p>
+                    <p className="text-rose-500 font-bold text-lg mb-2">
+                        💌 Gönderiliyor...
+                    </p>
                     <p className="text-gray-700 whitespace-pre-wrap">{text}</p>
                 </div>
-
             </div>
         </div>
     );
 }
 
-/* --------------------------------------------------------
-   GİZLİ MESAJ (basılı tutunca açılıyor)
--------------------------------------------------------- */
+/*  
+----------------------------
+   GİZLİ MESAJ (8) – hold to reveal
+----------------------------
+*/
 function SecretText({ text }) {
     const [revealed, setRevealed] = useState(false);
 
@@ -150,10 +128,10 @@ function SecretText({ text }) {
             onMouseLeave={() => setRevealed(false)}
             onTouchStart={() => setRevealed(true)}
             onTouchEnd={() => setRevealed(false)}
-            className="transition-all duration-300 select-none cursor-pointer mt-2"
+            className="transition-all duration-300 select-none cursor-pointer"
             style={{
-                filter: revealed ? "blur(0)" : "blur(6px)",
-                opacity: revealed ? 1 : 0.6
+                filter: revealed ? "blur(0px)" : "blur(6px)",
+                opacity: revealed ? 1 : 0.7
             }}
         >
             {text}
@@ -161,31 +139,64 @@ function SecretText({ text }) {
     );
 }
 
-/* --------------------------------------------------------
-   MESAJ SİSTEMİ (Foto + Zaman Kapsülü + Gizli Mesaj)
--------------------------------------------------------- */
+/*  
+----------------------------
+   HOŞ GELDİN PRENSESİM (12)
+----------------------------
+*/
+function WelcomeOverlay({ onClose }) {
+    useEffect(() => {
+        const t = setTimeout(onClose, 2200);
+        return () => clearTimeout(t);
+    }, []);
+
+    return (
+        <div className="fixed inset-0 bg-rose-300/60 backdrop-blur-xl z-[9998] flex items-center justify-center">
+            <h1
+                className="text-white text-4xl sm:text-5xl font-bold text-center px-4"
+                style={{ animation: "welcomeFade 1.5s ease-out forwards" }}
+            >
+                💕 Hoş geldin prensesim 💕
+            </h1>
+        </div>
+    );
+}
+
+/*  
+----------------------------
+  ANA MESAJ SİSTEMİ + ZAMAN KAPSÜLÜ
+----------------------------
+*/
 function MessageWall() {
     const [messages, setMessages] = useState([]);
-    const [senderName, setSenderName] = useState("");
     const [newMessage, setNewMessage] = useState("");
+    const [senderName, setSenderName] = useState("");
     const [secretMode, setSecretMode] = useState(false);
     const [capsuleDate, setCapsuleDate] = useState("");
 
-    const [photos, setPhotos] = useState([]); // seçili foto dosyaları
     const [sendingAnim, setSendingAnim] = useState(false);
     const [tempText, setTempText] = useState("");
 
-    const [modalPhoto, setModalPhoto] = useState(null);
+    const [showWelcome, setShowWelcome] = useState(false);
+    const [pushReady, setPushReady] = useState(false);
 
     const now = new Date();
 
-    /* Firestore listener */
+    /* Hoş geldin overlay'i – sadece ilk girişte */
+    useEffect(() => {
+        if (window && !localStorage.getItem("sevval_welcome_shown")) {
+            setShowWelcome(true);
+            localStorage.setItem("sevval_welcome_shown", "yes");
+        }
+    }, []);
+
+    /* Firestore mesaj listener */
     useEffect(() => {
         const unsub = db.collection("messages")
             .orderBy("timestamp", "desc")
-            .onSnapshot((snapshot) => {
+            .onSnapshot(snapshot => {
                 setMessages(snapshot.docs.map(doc => ({
-                    id: doc.id, 
+                    id: doc.id,
                     ...doc.data()
                 })));
             });
@@ -193,32 +204,58 @@ function MessageWall() {
         return () => unsub();
     }, []);
 
-    /* FOTOĞRAF SEÇME */
-    const handlePhotoSelect = (e) => {
-        setPhotos([...e.target.files]); // çoklu foto desteği
-    };
+    /* Push için service worker kayıtlı mı? */
+    useEffect(() => {
+        if ("serviceWorker" in navigator && "Notification" in window) {
+            navigator.serviceWorker.register("/firebase-messaging-sw.js")
+                .then(() => setPushReady(true))
+                .catch(() => setPushReady(false));
+        }
+    }, []);
 
-    /* FOTOĞRAF UPLOAD + MESAJ GÖNDERME */
+    /* PUSH TOKEN KAYDETME */
+    async function subscribeToNotifications() {
+        try {
+            if (!("Notification" in window)) {
+                alert("Tarayıcın bildirim desteklemiyor.");
+                return;
+            }
+
+            const permission = await Notification.requestPermission();
+            if (permission !== "granted") {
+                alert("Bildirim izni verilmedi.");
+                return;
+            }
+
+            // Firebase Console > Cloud Messaging > Web configuration'dan alacağın public key
+            const vapidKey = "BURAYA_WEB_PUSH_CERT_PUBLIC_KEY_GELECEK";
+
+            const currentToken = await messaging.getToken({ vapidKey });
+
+            if (currentToken) {
+                await db.collection("notificationTokens").doc(currentToken).set({
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("Bildirimler aktif 💌");
+            } else {
+                alert("Token alınamadı.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Bildirim abonesi oluşturulamadı.");
+        }
+    }
+
+    /* Mesaj gönderme */
     const sendMessage = async () => {
-        if (!senderName.trim() || (!newMessage.trim() && photos.length === 0)) return;
+        if (!senderName.trim() || !newMessage.trim()) return;
 
         setTempText(newMessage);
         setSendingAnim(true);
 
-        // Fotoğraflar Storage'a yükleniyor → URL listesi oluşturuluyor
-        const photoURLs = [];
-
-        for (const file of photos) {
-            const ref = storage.ref(`photos/${Date.now()}_${file.name}`);
-            await ref.put(file);
-            const url = await ref.getDownloadURL();
-            photoURLs.push(url);
-        }
-
         await db.collection("messages").add({
             sender: senderName,
             text: newMessage,
-            photos: photoURLs, // 🔥 foto URL listesini kaydediyoruz
             secret: secretMode,
             openAt: capsuleDate ? new Date(capsuleDate) : null,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -228,7 +265,6 @@ function MessageWall() {
         setNewMessage("");
         setSecretMode(false);
         setCapsuleDate("");
-        setPhotos([]);
     };
 
     const deleteMessage = async (id) => {
@@ -236,9 +272,14 @@ function MessageWall() {
     };
 
     return (
-        <div className="max-w-2xl mx-auto pb-10">
+        <div className="min-h-screen p-6 bg-gradient-to-br from-rose-400 via-pink-500 to-purple-600">
 
-            {/* GÖNDERİLİYOR ANİMASYONU */}
+            {/* Hoş geldin */}
+            {showWelcome && (
+                <WelcomeOverlay onClose={() => setShowWelcome(false)} />
+            )}
+
+            {/* Tam ekran mektup animasyonu */}
             {sendingAnim && (
                 <FullscreenSendLetter
                     text={tempText}
@@ -246,9 +287,28 @@ function MessageWall() {
                 />
             )}
 
-            {/* MESAJ YAZMA ALANI */}
-            <div className="bg-white p-5 rounded-2xl shadow-xl mb-6">
-                
+            {/* Header */}
+            <div className="max-w-2xl mx-auto bg-white/30 backdrop-blur-xl p-6 rounded-3xl text-center mb-4">
+                <h1 className="text-white text-4xl sm:text-5xl font-bold">
+                    Şevvale Sevgilerle 💕
+                </h1>
+                <p className="text-white/90 mt-1">Sadece senin için yazılmış mektuplar.</p>
+            </div>
+
+            {/* Bildirim butonu */}
+            {pushReady && (
+                <div className="max-w-2xl mx-auto mb-4 text-center">
+                    <button
+                        onClick={subscribeToNotifications}
+                        className="bg-white/30 backdrop-blur-lg px-4 py-2 rounded-xl text-white font-semibold hover:bg-white/40"
+                    >
+                        🔔 Bildirimleri Aç
+                    </button>
+                </div>
+            )}
+
+            {/* Input alanı */}
+            <div className="max-w-2xl mx-auto bg-white p-5 rounded-2xl shadow-xl mb-6">
                 <input
                     type="text"
                     placeholder="İsmin 💕"
@@ -265,33 +325,8 @@ function MessageWall() {
                     onChange={(e)=>setNewMessage(e.target.value)}
                 />
 
-                {/* 📎 FOTOĞRAF EKLE */}
-                <label className="flex items-center gap-3 cursor-pointer mb-3">
-                    <span className="bg-rose-500 text-white px-3 py-2 rounded-xl text-sm">
-                        📎 Fotoğraf Ekle
-                    </span>
-                    <input 
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={handlePhotoSelect}
-                    />
-                </label>
-
-                {/* YÜKLENEN FOTO ÖNİZLEMESİ */}
-                {photos.length > 0 && (
-                    <div className="flex gap-2 flex-wrap mb-3">
-                        {photos.map((p, i) => (
-                            <p className="text-xs bg-gray-100 px-2 py-1 rounded" key={i}>
-                                {p.name}
-                            </p>
-                        ))}
-                    </div>
-                )}
-
-                {/* Gizli mesaj */}
-                <label className="flex items-center gap-2 mb-3">
+                {/* Gizli mesaj toggle */}
+                <label className="flex items-center gap-2 mb-3 cursor-pointer">
                     <input 
                         type="checkbox"
                         checked={secretMode}
@@ -301,8 +336,8 @@ function MessageWall() {
                 </label>
 
                 {/* Zaman kapsülü */}
-                <label className="block mb-4">
-                    <span className="text-gray-700">⏳ Zaman kapsülü</span>
+                <label className="block mb-3">
+                    <span className="text-gray-700">⏳ Zaman kapsülü (isteğe bağlı)</span>
                     <input 
                         type="datetime-local"
                         className="w-full border p-2 rounded-xl mt-1"
@@ -319,16 +354,16 @@ function MessageWall() {
                 </button>
             </div>
 
-            {/* MESAJ LİSTESİ */}
-            <div className="space-y-4">
+            {/* Mesaj listesi */}
+            <div className="max-w-2xl mx-auto space-y-4 pb-10">
                 {messages.map(msg => {
                     const openAt = msg.openAt?.toDate ? msg.openAt.toDate() : null;
-                    const locked = openAt && new Date() < openAt;
+                    const locked = openAt && now < openAt;
 
                     return (
                         <div key={msg.id} className="bg-white p-5 rounded-2xl shadow-xl">
 
-                            <div className="flex justify-between items-start">
+                            <div className="flex justify-between items-start mb-2">
                                 <div>
                                     <p className="font-bold" style={{ color: msg.color }}>
                                         {msg.sender}
@@ -338,7 +373,7 @@ function MessageWall() {
                                     </p>
                                 </div>
 
-                                <button 
+                                <button
                                     onClick={() => deleteMessage(msg.id)}
                                     className="text-red-500 hover:text-red-700 text-xl"
                                 >
@@ -346,154 +381,28 @@ function MessageWall() {
                                 </button>
                             </div>
 
-                            {/* ZAMAN KAPSÜLÜ KİLİTLİ */}
-                            {locked && (
-                                <p className="text-gray-600 mt-3">
-                                    ⏳ Bu mektup <b>{openAt.toLocaleString("tr-TR")}</b> tarihinde açılacak 💌
+                            {/* ZAMAN KAPSÜLÜ MANTIĞI */}
+                            {locked ? (
+                                <p className="text-gray-600 mt-2">
+                                    ⏳ Bu mektup{" "}
+                                    <b>{openAt.toLocaleString("tr-TR")}</b> tarihinde açılacak 💌
+                                </p>
+                            ) : msg.secret ? (
+                                <SecretText text={msg.text} />
+                            ) : (
+                                <p className="text-gray-800 whitespace-pre-wrap mt-3">
+                                    {msg.text}
                                 </p>
                             )}
-
-                            {/* METİN (gizli veya normal) */}
-                            {!locked && (
-                                msg.secret ? (
-                                    <SecretText text={msg.text} />
-                                ) : (
-                                    <p className="text-gray-800 whitespace-pre-wrap mt-2">
-                                        {msg.text}
-                                    </p>
-                                )
-                            )}
-
-                            {/* FOTOĞRAFLAR (mesajın içeriği görünmesin istedin → sadece "Fotoğrafı Aç" butonu) */}
-                            {!locked && msg.photos && msg.photos.length > 0 && (
-                                <div className="mt-4">
-                                    {msg.photos.map((url, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => setModalPhoto(url)}
-                                            className="bg-gray-100 border border-gray-300 px-3 py-2 rounded-xl text-sm hover:bg-gray-200"
-                                        >
-                                            📷 Fotoğrafı Aç ({i+1})
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-
                         </div>
                     );
                 })}
             </div>
-
-            {/* FOTO MODAL */}
-            <PhotoModal url={modalPhoto} onClose={() => setModalPhoto(null)} />
-        </div>
-    );
-}
-/* --------------------------------------------------------
-   HOŞ GELDİN PRENSESİM AÇILIŞ EKRANI
--------------------------------------------------------- */
-function WelcomeOverlay({ onClose }) {
-    useEffect(() => {
-        const t = setTimeout(() => onClose(), 2200);
-        return () => clearTimeout(t);
-    }, []);
-
-    return (
-        <div className="fixed inset-0 bg-rose-300/60 backdrop-blur-xl z-[9997] flex items-center justify-center">
-            <h1 className="text-white text-4xl sm:text-5xl font-bold text-center"
-                style={{ animation: "welcomeFade 1.5s ease-out forwards" }}>
-                💕 Hoş geldin prensesim 💕
-            </h1>
         </div>
     );
 }
 
-/* --------------------------------------------------------
-   ANA APP WRAPPER
--------------------------------------------------------- */
-function App() {
-    const [showWelcome, setShowWelcome] = useState(false);
-    const [pushReady, setPushReady] = useState(false);
-
-    // Hoş geldin ekranı sadece 1 kez
-    useEffect(() => {
-        if (!localStorage.getItem("sevval_welcome_shown")) {
-            setShowWelcome(true);
-            localStorage.setItem("sevval_welcome_shown", "yes");
-        }
-    }, []);
-
-    // Service Worker kayıtlı mı kontrol et
-    useEffect(() => {
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("/firebase-messaging-sw.js")
-                .then(() => setPushReady(true))
-                .catch(() => setPushReady(false));
-        }
-    }, []);
-
-    async function enableNotifications() {
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-            alert("Bildirim izni verilmedi.");
-            return;
-        }
-
-        const vapidKey = "BURAYA_WEB_PUSH_PUBLIC_KEY_GELECEK";
-
-        const token = await messaging.getToken({ vapidKey });
-        if (token) {
-            await db.collection("notificationTokens").doc(token).set({
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("Bildirimler aktif 💌");
-        } else {
-            alert("Token alınamadı.");
-        }
-    }
-
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-rose-400 via-pink-500 to-purple-600 p-6">
-
-            {/* HOŞ GELDİN EKRANI */}
-            {showWelcome && (
-                <WelcomeOverlay onClose={() => setShowWelcome(false)} />
-            )}
-
-            {/* HEADER */}
-            <div className="max-w-2xl mx-auto bg-white/30 backdrop-blur-xl p-6 rounded-3xl text-center mb-6 shadow-xl">
-                <h1 className="text-white text-5xl font-bold">
-                    Şevvale Sevgilerle 💕
-                </h1>
-                <p className="text-white/90 mt-2">
-                    Sana özel mektuplar ve anılar burada 🌸
-                </p>
-            </div>
-
-            {/* BİLDİRİM BUTONU */}
-            {pushReady && (
-                <div className="max-w-2xl mx-auto mb-4 text-center">
-                    <button
-                        onClick={enableNotifications}
-                        className="bg-white/30 backdrop-blur-lg px-4 py-2 rounded-xl 
-                        text-white font-semibold hover:bg-white/40">
-                        🔔 Bildirimleri Aç
-                    </button>
-                </div>
-            )}
-
-            {/* ANA MESAJ SİSTEMİ */}
-            <MessageWall />
-        </div>
-    );
-}
-
-/* --------------------------------------------------------
-   REACT RENDER
--------------------------------------------------------- */
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-
+ReactDOM.createRoot(document.getElementById("root")).render(<MessageWall />);
 </script>
-
 </body>
 </html>
