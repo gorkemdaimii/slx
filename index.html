@@ -27,13 +27,15 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 
   <style>
-    html, body { height: 100%; }
+    html, body { height: 100%; width: 100%; }
     body {
       margin: 0;
       background: #0b0b10;
       color: white;
+      overflow-x: hidden; /* ✅ mobilde sağa kaymayı kökten kes */
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     }
+    #root { width: 100%; overflow-x: hidden; } /* ✅ ekstra güvenlik */
     @keyframes grain {
       0% { transform: translate(0,0); }
       10% { transform: translate(-5%, -10%); }
@@ -244,7 +246,7 @@ function FilmGrain() {
   );
 }
 
-/* -------------------- Pages -------------------- */
+/* -------------------- Tonight -------------------- */
 function Tonight({ db, me, partner }) {
   const dKey = useMemo(() => dayKey(new Date()), []);
   const [night, setNight] = useState(null);
@@ -323,7 +325,7 @@ function Tonight({ db, me, partner }) {
         sender: me,
         mood: Number(mood),
         oneLine: oneLine.trim(),
-        text: text.trim(), // ✅ plain text
+        text: text.trim(),
         secret: !!secret,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         createdAt: myEntry?.createdAt || firebase.firestore.FieldValue.serverTimestamp()
@@ -347,18 +349,18 @@ function Tonight({ db, me, partner }) {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-3xl p-5 border border-white/12 bg-gradient-to-br from-white/10 to-white/5 shadow-2xl shadow-black/30">
+      <div className="rounded-3xl p-5 border border-white/12 bg-gradient-to-br from-white/10 to-white/5 shadow-2xl shadow-black/30 overflow-hidden">
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <div className="text-white/70 text-xs tracking-widest uppercase">Tonight • {dKey}</div>
             <div className="text-white text-2xl font-black leading-tight mt-1">Gece Ritüeli</div>
           </div>
-          <Chip className="mt-1">{moodEmoji(mood)} {mood}</Chip>
+          <Chip className="mt-1 shrink-0">{moodEmoji(mood)} {mood}</Chip>
         </div>
 
         <div className="mt-4">
           <div className="text-white/70 text-sm mb-2">Bugünün sorusu</div>
-          <div className="text-white text-lg font-semibold leading-snug">“{title}”</div>
+          <div className="text-white text-lg font-semibold leading-snug break-words">“{title}”</div>
         </div>
 
         <div className="mt-5 grid gap-3">
@@ -371,7 +373,7 @@ function Tonight({ db, me, partner }) {
               value={oneLine}
               onChange={(e) => setOneLine(e.target.value)}
               placeholder="1 satır… punchline…"
-              className="w-full rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
+              className="w-full min-w-0 rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
               maxLength={180}
             />
           </div>
@@ -383,16 +385,16 @@ function Tonight({ db, me, partner }) {
               onChange={(e) => setText(e.target.value)}
               rows={6}
               placeholder="Bugün ne oldu? Neyi hissettin?"
-              className="w-full rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30 resize-none"
+              className="w-full min-w-0 rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30 resize-none"
             />
           </div>
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <label className="text-white/80 text-sm flex items-center gap-2">
               <input type="checkbox" checked={secret} onChange={(e) => setSecret(e.target.checked)} />
               Gizli (basılı tutunca açılsın)
             </label>
-            <Button onClick={saveEntry} disabled={saving}>
+            <Button onClick={saveEntry} disabled={saving} className="w-full sm:w-auto">
               {saving ? "Kaydediyorum…" : myEntry ? "Güncelle 💌" : "Gönder 💌"}
             </Button>
           </div>
@@ -401,7 +403,7 @@ function Tonight({ db, me, partner }) {
         </div>
       </div>
 
-      <div className="rounded-3xl p-5 border border-white/12 bg-white/5">
+      <div className="rounded-3xl p-5 border border-white/12 bg-white/5 overflow-hidden">
         <SectionTitle title={isComplete ? "Perde Açıldı 🎬" : "Bekleme Odası"} right={<Chip>{entries.length}/2</Chip>} />
         {loading ? (
           <div className="text-white/70">Yükleniyor…</div>
@@ -434,18 +436,18 @@ function EntryCard({ who, entry, mine }) {
   const secret = !!entry?.secret;
 
   return (
-    <div className={"rounded-3xl p-4 border shadow-xl shadow-black/25 " + (has ? "bg-gradient-to-br from-white/10 to-white/5 border-white/15" : "bg-black/15 border-white/10")}>
+    <div className={"rounded-3xl p-4 border shadow-xl shadow-black/25 overflow-hidden " + (has ? "bg-gradient-to-br from-white/10 to-white/5 border-white/15" : "bg-black/15 border-white/10")}>
       <div className="flex items-center justify-between gap-2">
-        <div className="text-white font-bold">{who || (mine ? "Ben" : "O")}</div>
-        {has && <Chip>{moodEmoji(mood)} {mood}</Chip>}
+        <div className="text-white font-bold min-w-0 break-words">{who || (mine ? "Ben" : "O")}</div>
+        {has && <Chip className="shrink-0">{moodEmoji(mood)} {mood}</Chip>}
       </div>
 
       {!has ? (
         <div className="mt-4 text-white/60 text-sm">{mine ? "Senin girişin burada görünecek." : "Onun yazması bekleniyor…"}</div>
       ) : (
         <div className="mt-3 space-y-3">
-          {oneLine && <div className="text-white text-base font-semibold leading-snug">“{oneLine}”</div>}
-          <div className="text-white/80 text-sm whitespace-pre-wrap leading-relaxed">
+          {oneLine && <div className="text-white text-base font-semibold leading-snug break-words">“{oneLine}”</div>}
+          <div className="text-white/80 text-sm whitespace-pre-wrap leading-relaxed break-words overflow-hidden">
             {secret ? <SecretHold>{body}</SecretHold> : body}
           </div>
           <div className="text-white/50 text-xs">{entry?.updatedAt ? `${niceTime(entry.updatedAt)}` : ""}</div>
@@ -489,13 +491,13 @@ function RevealSplit({ entries, me }) {
 
         <div className="mt-5 grid sm:grid-cols-2 gap-4">
           {ordered.map((e) => (
-            <div key={e.id} className="rounded-3xl p-4 bg-white/5 border border-white/10">
+            <div key={e.id} className="rounded-3xl p-4 bg-white/5 border border-white/10 overflow-hidden">
               <div className="flex items-center justify-between">
-                <div className="text-white font-bold">{e.sender}</div>
-                <Chip>{moodEmoji(e.mood)} {e.mood}</Chip>
+                <div className="text-white font-bold min-w-0 break-words">{e.sender}</div>
+                <Chip className="shrink-0">{moodEmoji(e.mood)} {e.mood}</Chip>
               </div>
-              {e.oneLine && <div className="mt-3 text-white text-base font-semibold">“{e.oneLine}”</div>}
-              <div className="mt-3 text-white/80 text-sm whitespace-pre-wrap leading-relaxed">
+              {e.oneLine && <div className="mt-3 text-white text-base font-semibold break-words">“{e.oneLine}”</div>}
+              <div className="mt-3 text-white/80 text-sm whitespace-pre-wrap leading-relaxed break-words overflow-hidden">
                 {e.secret ? <SecretHold>{e.text}</SecretHold> : e.text}
               </div>
             </div>
@@ -508,6 +510,7 @@ function RevealSplit({ entries, me }) {
   );
 }
 
+/* -------------------- Archive -------------------- */
 function Archive({ db }) {
   const [nights, setNights] = useState([]);
   const [selectedDay, setSelectedDay] = useState(null);
@@ -584,7 +587,7 @@ function Archive({ db }) {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-3xl p-5 border border-white/12 bg-white/5">
+      <div className="rounded-3xl p-5 border border-white/12 bg-white/5 overflow-hidden">
         <SectionTitle
           title="Arşiv"
           right={
@@ -634,19 +637,19 @@ function Archive({ db }) {
       </div>
 
       {selectedDay && (
-        <div className="rounded-3xl p-5 border border-white/12 bg-white/5">
+        <div className="rounded-3xl p-5 border border-white/12 bg-white/5 overflow-hidden">
           <SectionTitle title={selectedDay} right={<GhostButton onClick={() => setSelectedDay(null)}>Kapat</GhostButton>} />
-          {selectedNight?.prompt?.text && <div className="text-white/70 text-sm mb-3">Soru: “{selectedNight.prompt.text}”</div>}
+          {selectedNight?.prompt?.text && <div className="text-white/70 text-sm mb-3 break-words">Soru: “{selectedNight.prompt.text}”</div>}
 
           <div className="grid sm:grid-cols-2 gap-4">
             {selectedEntries.map((e) => (
-              <div key={e.id} className="rounded-3xl p-4 bg-black/15 border border-white/10">
+              <div key={e.id} className="rounded-3xl p-4 bg-black/15 border border-white/10 overflow-hidden">
                 <div className="flex items-center justify-between">
-                  <div className="text-white font-bold">{e.sender}</div>
-                  <Chip>{moodEmoji(e.mood)} {e.mood}</Chip>
+                  <div className="text-white font-bold min-w-0 break-words">{e.sender}</div>
+                  <Chip className="shrink-0">{moodEmoji(e.mood)} {e.mood}</Chip>
                 </div>
-                {e.oneLine && <div className="mt-3 text-white text-base font-semibold">“{e.oneLine}”</div>}
-                <div className="mt-3 text-white/80 text-sm whitespace-pre-wrap leading-relaxed">
+                {e.oneLine && <div className="mt-3 text-white text-base font-semibold break-words">“{e.oneLine}”</div>}
+                <div className="mt-3 text-white/80 text-sm whitespace-pre-wrap leading-relaxed break-words overflow-hidden">
                   {e.secret ? <SecretHold>{e.text}</SecretHold> : e.text}
                 </div>
               </div>
@@ -661,7 +664,7 @@ function Archive({ db }) {
 
 /* -------------------- Capsules (COUNTDOWN + CINEMATIC) -------------------- */
 function CapsuleCinematicModal({ capsule, mode, onClose }) {
-  const [stage, setStage] = useState("boot"); // boot -> title -> reveal
+  const [stage, setStage] = useState("boot");
   const openMs = capsule?.openAt?.toDate ? capsule.openAt.toDate().getTime() : null;
 
   useEffect(() => {
@@ -708,18 +711,18 @@ function CapsuleCinematicModal({ capsule, mode, onClose }) {
                       }}
                     />
                   </div>
-                  <div className="text-white/60 text-xs mt-3">
+                  <div className="text-white/60 text-xs mt-3 break-words">
                     {capsule?.sender ? `from: ${capsule.sender}` : ""}{" "}
                     {openMs ? `• ${new Date(openMs).toLocaleString("tr-TR", { timeZone: TZ })}` : ""}
                   </div>
                 </div>
               ) : (
-                <div className="rounded-3xl bg-black/25 border border-white/10 p-4">
+                <div className="rounded-3xl bg-black/25 border border-white/10 p-4 overflow-hidden">
                   <div className="flex items-center justify-between gap-3">
-                    <Chip>💌 {capsule?.sender || "?"}</Chip>
-                    <Chip>🕰️ {openMs ? new Date(openMs).toLocaleString("tr-TR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" }) : ""}</Chip>
+                    <Chip className="min-w-0">💌 <span className="break-words">{capsule?.sender || "?"}</span></Chip>
+                    <Chip className="shrink-0">🕰️ {openMs ? new Date(openMs).toLocaleString("tr-TR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" }) : ""}</Chip>
                   </div>
-                  <div className="mt-4 text-white text-base whitespace-pre-wrap leading-relaxed">
+                  <div className="mt-4 text-white text-base whitespace-pre-wrap leading-relaxed break-words overflow-hidden">
                     {capsule?.text || ""}
                   </div>
                 </div>
@@ -746,13 +749,9 @@ function Capsules({ db, me }) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
-  // ✅ countdown için realtime "now"
   const [nowMs, setNowMs] = useState(Date.now());
-
-  // 🎬 cinematic modal
   const [modal, setModal] = useState({ open: false, capsule: null, mode: "manual" });
 
-  // auto-open kontrolü (1 kere)
   const prevOpenMap = useRef({});
   const autoOpened = useRef(new Set());
 
@@ -762,13 +761,10 @@ function Capsules({ db, me }) {
   }, []);
 
   useEffect(() => {
-    const unsub = capsulesRef(db)
-      .orderBy("openAt", "desc")
-      .limit(120)
-      .onSnapshot((snap) => {
-        const arr = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setItems(arr);
-      });
+    const unsub = capsulesRef(db).orderBy("openAt", "desc").limit(120).onSnapshot((snap) => {
+      const arr = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setItems(arr);
+    });
     return () => unsub();
   }, [db]);
 
@@ -807,7 +803,6 @@ function Capsules({ db, me }) {
     setModal({ open: false, capsule: null, mode: "manual" });
   }
 
-  // ✅ Auto-open: kapsül kilitten çıkınca otomatik title-card
   useEffect(() => {
     for (const c of items) {
       const openTime = c.openAt?.toDate ? c.openAt.toDate().getTime() : null;
@@ -815,30 +810,23 @@ function Capsules({ db, me }) {
 
       const isOpen = openTime <= nowMs;
       const prev = prevOpenMap.current[c.id];
-
       prevOpenMap.current[c.id] = isOpen;
 
       if (prev === false && isOpen === true && !autoOpened.current.has(c.id)) {
         autoOpened.current.add(c.id);
         openCinematic(c, "auto");
       }
-      if (prev === undefined) {
-        prevOpenMap.current[c.id] = isOpen;
-      }
+      if (prev === undefined) prevOpenMap.current[c.id] = isOpen;
     }
   }, [items, nowMs]);
 
   return (
     <div className="space-y-5">
       {modal.open && (
-        <CapsuleCinematicModal
-          capsule={modal.capsule}
-          mode={modal.mode}
-          onClose={closeCinematic}
-        />
+        <CapsuleCinematicModal capsule={modal.capsule} mode={modal.mode} onClose={closeCinematic} />
       )}
 
-      <div className="rounded-3xl p-5 border border-white/12 bg-white/5">
+      <div className="rounded-3xl p-5 border border-white/12 bg-white/5 overflow-hidden">
         <SectionTitle title="Zaman Kapsülleri" />
         <div className="grid gap-3">
           <textarea
@@ -846,16 +834,16 @@ function Capsules({ db, me }) {
             onChange={(e) => setText(e.target.value)}
             rows={4}
             placeholder="Geleceğe bir mektup…"
-            className="w-full rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30 resize-none"
+            className="w-full min-w-0 rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30 resize-none"
           />
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
             <input
               type="datetime-local"
               value={openAt}
               onChange={(e) => setOpenAt(e.target.value)}
-              className="rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
+              className="w-full min-w-0 rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
             />
-            <Button onClick={addCapsule} disabled={saving}>
+            <Button onClick={addCapsule} disabled={saving} className="w-full sm:w-auto">
               {saving ? "Gönderiyorum…" : "Kapsüle koy 💌"}
             </Button>
           </div>
@@ -863,7 +851,7 @@ function Capsules({ db, me }) {
         </div>
       </div>
 
-      <div className="rounded-3xl p-5 border border-white/12 bg-white/5">
+      <div className="rounded-3xl p-5 border border-white/12 bg-white/5 overflow-hidden">
         <SectionTitle title="Kapsül Rafı" right={<Chip>{items.length}</Chip>} />
         <div className="grid gap-3">
           {items.map((c) => {
@@ -872,25 +860,25 @@ function Capsules({ db, me }) {
             const remain = openMs ? openMs - nowMs : null;
 
             return (
-              <div key={c.id} className="rounded-3xl p-4 bg-black/15 border border-white/10">
+              <div key={c.id} className="rounded-3xl p-4 bg-black/15 border border-white/10 overflow-hidden">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="text-white font-bold">{c.sender || "?"}</div>
-                  <Chip>{isOpen ? "🔓 açık" : "🔒 kilitli"}</Chip>
+                  <div className="text-white font-bold min-w-0 break-words">{c.sender || "?"}</div>
+                  <Chip className="shrink-0">{isOpen ? "🔓 açık" : "🔒 kilitli"}</Chip>
                 </div>
 
-                <div className="text-white/60 text-xs mt-1">
+                <div className="text-white/60 text-xs mt-1 break-words">
                   Açılma: {openMs ? new Date(openMs).toLocaleString("tr-TR", { timeZone: TZ }) : ""}
                 </div>
 
                 {!isOpen && (
-                  <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+                  <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 overflow-hidden">
                     <div className="text-white/70 text-xs tracking-widest uppercase">countdown</div>
                     <div className="text-white text-lg font-black mt-1">{formatRemaining(remain || 0)}</div>
                     <div className="text-white/60 text-xs mt-1">Açılınca otomatik “title card” 🎬</div>
                   </div>
                 )}
 
-                <div className="mt-3 text-white/80 text-sm whitespace-pre-wrap leading-relaxed">
+                <div className="mt-3 text-white/80 text-sm whitespace-pre-wrap leading-relaxed break-words overflow-hidden">
                   {isOpen ? c.text : <div className="text-white/60">Bu kapsül kilitli.</div>}
                 </div>
 
@@ -946,7 +934,7 @@ function Settings({ db, me, setMe, partner, setPartner, vapidKey, setVapidKey })
 
   return (
     <div className="space-y-5">
-      <div className="rounded-3xl p-5 border border-white/12 bg-white/5">
+      <div className="rounded-3xl p-5 border border-white/12 bg-white/5 overflow-hidden">
         <SectionTitle title="Ayarlar" />
         <div className="grid gap-3">
           <div className="grid sm:grid-cols-2 gap-3">
@@ -956,7 +944,7 @@ function Settings({ db, me, setMe, partner, setPartner, vapidKey, setVapidKey })
                 value={me}
                 onChange={(e) => setMe(e.target.value)}
                 placeholder="İsmin"
-                className="rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
+                className="w-full min-w-0 rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
               />
             </div>
             <div className="grid gap-2">
@@ -965,12 +953,12 @@ function Settings({ db, me, setMe, partner, setPartner, vapidKey, setVapidKey })
                 value={partner}
                 onChange={(e) => setPartner(e.target.value)}
                 placeholder="Onun ismi"
-                className="rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
+                className="w-full min-w-0 rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
               />
             </div>
           </div>
 
-          <div className="rounded-3xl p-4 bg-black/15 border border-white/10">
+          <div className="rounded-3xl p-4 bg-black/15 border border-white/10 overflow-hidden">
             <div className="text-white font-bold">Push (opsiyonel)</div>
             <div className="text-white/60 text-xs mt-1">Web push göndermek için server-side / Cloud Function gerekir. Burada sadece token kaydı var.</div>
             <div className="mt-3 grid gap-2">
@@ -979,7 +967,7 @@ function Settings({ db, me, setMe, partner, setPartner, vapidKey, setVapidKey })
                 value={vapidKey}
                 onChange={(e) => setVapidKey(e.target.value)}
                 placeholder="Firebase Console → Cloud Messaging → Web configuration"
-                className="rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
+                className="w-full min-w-0 rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
               />
               <div className="flex items-center gap-3">
                 <GhostButton onClick={subscribePush}>Bildirimleri aç</GhostButton>
@@ -994,7 +982,7 @@ function Settings({ db, me, setMe, partner, setPartner, vapidKey, setVapidKey })
   );
 }
 
-/* -------------------- Legacy Wall -------------------- */
+/* -------------------- Duvar (Legacy) — MOBİL FIX ✅ -------------------- */
 function LegacyWall() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -1037,57 +1025,68 @@ function LegacyWall() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-3xl p-5 border border-white/12 bg-white/5">
-        <SectionTitle title="Duvar (Legacy)" />
+      {/* ✅ Form: mobilde kolon, taşma yok */}
+      <div className="rounded-3xl p-5 border border-white/12 bg-white/5 overflow-hidden">
+        <SectionTitle title="Duvar" />
         <div className="grid gap-3">
           <input
             value={senderName}
             onChange={(e) => setSenderName(e.target.value)}
             placeholder="Adın"
-            className="rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
+            className="w-full min-w-0 rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
           />
+
           <textarea
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            rows={4}
+            rows={5}
             placeholder="Mesaj…"
-            className="rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30 resize-none"
+            className="w-full min-w-0 rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30 resize-none"
           />
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+
+          <div className="flex items-center justify-between gap-3">
             <label className="text-white/80 text-sm flex items-center gap-2">
               <input type="checkbox" checked={secretMode} onChange={(e) => setSecretMode(e.target.checked)} />
               gizli
             </label>
+            <Chip className="shrink-0">{newMessage.length}</Chip>
+          </div>
 
-            <div className="flex items-center gap-3">
-              <input
-                type="datetime-local"
-                value={capsuleDate}
-                onChange={(e) => setCapsuleDate(e.target.value)}
-                className="rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
-              />
-              <Button onClick={send} disabled={sending}>{sending ? "…" : "Gönder"}</Button>
-            </div>
+          {/* ✅ Tarih + buton: mobilde alt alta, sm'de yan yana */}
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+            <input
+              type="datetime-local"
+              value={capsuleDate}
+              onChange={(e) => setCapsuleDate(e.target.value)}
+              className="w-full min-w-0 rounded-2xl bg-black/20 border border-white/15 text-white px-4 py-3 outline-none focus:border-white/30"
+            />
+            <Button onClick={send} disabled={sending} className="w-full sm:w-auto">
+              {sending ? "…" : "Gönder"}
+            </Button>
           </div>
         </div>
       </div>
 
-      <div className="rounded-3xl p-5 border border-white/12 bg-white/5">
+      {/* ✅ Liste: break-words + overflow-hidden ile sağa taşma yok */}
+      <div className="rounded-3xl p-5 border border-white/12 bg-white/5 overflow-hidden">
         <SectionTitle title="Mesajlar" right={<Chip>{messages.length}</Chip>} />
         <div className="grid gap-3">
           {messages.map((m) => {
             const openAt = m.openAt?.toDate ? m.openAt.toDate() : m.openAt ? new Date(m.openAt) : null;
             const locked = openAt && openAt > now;
             return (
-              <div key={m.id} className="rounded-3xl p-4 bg-black/15 border border-white/10">
-                <div className="flex items-center justify-between">
-                  <div className="text-white font-bold">{m.sender}</div>
-                  {locked ? <Chip>⏳ kapsül</Chip> : <Chip>💬</Chip>}
+              <div key={m.id} className="rounded-3xl p-4 bg-black/15 border border-white/10 overflow-hidden">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-white font-bold min-w-0 break-words">{m.sender}</div>
+                  {locked ? <Chip className="shrink-0">⏳ kapsül</Chip> : <Chip className="shrink-0">💬</Chip>}
                 </div>
+
                 {locked ? (
-                  <div className="mt-3 text-white/60 text-sm">Bu mesaj {openAt.toLocaleString("tr-TR", { timeZone: TZ })} tarihinde açılacak.</div>
+                  <div className="mt-3 text-white/60 text-sm break-words">
+                    Bu mesaj {openAt.toLocaleString("tr-TR", { timeZone: TZ })} tarihinde açılacak.
+                  </div>
                 ) : (
-                  <div className="mt-3 text-white/80 text-sm whitespace-pre-wrap leading-relaxed">
+                  <div className="mt-3 text-white/80 text-sm whitespace-pre-wrap leading-relaxed break-words overflow-hidden">
                     {m.secret ? <SecretHold>{m.text}</SecretHold> : m.text}
                   </div>
                 )}
@@ -1119,7 +1118,6 @@ function Tab({ active, onClick, label, icon }) {
 
 function App() {
   const [view, setView] = useState("tonight");
-
   const [me, setMe] = useState(localStorage.getItem("slx_me") || "");
   const [partner, setPartner] = useState(localStorage.getItem("slx_partner") || "");
   const [vapidKey, setVapidKey] = useState(localStorage.getItem("slx_vapid") || "");
@@ -1139,16 +1137,17 @@ function App() {
   }, [view, me, partner, vapidKey]);
 
   return (
-    <div className="min-h-screen bg-[#0b0b10] relative">
+    <div className="min-h-screen bg-[#0b0b10] relative overflow-x-hidden">
       <FilmGrain />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(244,143,177,0.25),transparent_55%),radial-gradient(circle_at_bottom,rgba(124,58,237,0.22),transparent_55%)]" />
+
       <div className="relative z-10 max-w-3xl mx-auto px-4 pb-28 pt-6">
         <header className="flex items-center justify-between mb-5">
-          <div>
-            <div className="text-white/60 text-xs tracking-widest uppercase">Görkem'den</div>
-            <div className="text-white text-2xl font-black leading-none">Şevvale değerli bir sadakatle sevgilerle</div>
+          <div className="min-w-0">
+            <div className="text-white/60 text-xs tracking-widest uppercase">SLX</div>
+            <div className="text-white text-2xl font-black leading-none">Gece Günlüğü</div>
           </div>
-          <Chip className="hidden sm:inline-flex">💞 birlikte</Chip>
+          <Chip className="hidden sm:inline-flex shrink-0">💞 birlikte</Chip>
         </header>
 
         {page}
@@ -1156,7 +1155,7 @@ function App() {
 
       <nav className="fixed bottom-0 left-0 right-0 z-20">
         <div className="max-w-3xl mx-auto px-4 pb-4">
-          <div className="rounded-3xl border border-white/12 bg-black/35 backdrop-blur-xl shadow-2xl shadow-black/40 p-2 grid grid-cols-5 gap-2">
+          <div className="rounded-3xl border border-white/12 bg-black/35 backdrop-blur-xl shadow-2xl shadow-black/40 p-2 grid grid-cols-5 gap-2 overflow-hidden">
             <Tab active={view === "tonight"} onClick={() => setView("tonight")} label="Tonight" icon="🌙" />
             <Tab active={view === "archive"} onClick={() => setView("archive")} label="Arşiv" icon="🗓️" />
             <Tab active={view === "capsules"} onClick={() => setView("capsules")} label="Kapsül" icon="⏳" />
