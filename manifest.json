@@ -1,9 +1,11 @@
 {
-  "name": "Şevvale Sevgilerle",
-  "short_name": "Mektuplar",
-  "start_url": "/",
+  "name": "SLX — Gece Ritüeli",
+  "short_name": "SLX",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f9d5e5",
+  "background_color": "#0b0b10",
   "theme_color": "#f48fb1",
+  "description": "İkinizin geceleri: hisler, mektuplar, kapsüller.",
   "icons": []
 }
